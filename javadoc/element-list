@@ -1,0 +1,8 @@
+org.example
+org.example.domain
+org.example.domain.validators
+org.example.interactions
+org.example.repository
+org.example.service
+org.example.strategy
+org.example.ui

@@ -1,0 +1,75 @@
+1. Header-ul XML
+xml
+<?xml version="1.0" encoding="UTF-8"?>
+Aceasta este declarația standard XML. Spune că fișierul este un XML valid și folosește caractere UTF-8 (ca să poți scrie și diacritice, emoji etc.).
+
+2. Importurile
+xml
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+Acestea sunt ca import-urile din Java.
+
+Îi spun fișierului FXML unde să găsească componentele pe care le folosești mai jos (ex: Button,
+Label
+ sunt în javafx.scene.control, VBox e în javafx.scene.layout).
+Fără ele, ar trebui să scrii numele complet jos (ex: <javafx.scene.control.Button ...>), ceea ce ar fi foarte lung și urât.
+3. Containerul Principal (Rădăcina)
+xml
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="org.example.gui.ChatController"
+      spacing="10" prefWidth="400" prefHeight="500">
+<VBox ...>: Elementul rădăcină. VBox (Vertical Box) este un container care își așază copiii unul sub altul, pe verticală.
+xmlns="http://javafx.com/javafx": (XML Namespace) Definește că tag-urile simple (ca Button,
+Label
+) aparțin de JavaFX. Acele "site-uri" nu sunt accesate pe internet, sunt doar identificatori unici (URI) standard pentru JavaFX.
+xmlns:fx="http://javafx.com/fxml": Definește namespace-ul special fx:. Acesta permite folosirea atributelor speciale FXML, cum ar fi fx:id (pentru a lega elementul de codul Java) sau fx:controller.
+fx:controller="org.example.gui.ChatController": FOARTE IMPORTANT. Aici faci legătura cu clasa Java. Îi spui: "Când încarci acest design, folosește clasa
+ChatController
+ pentru a-l controla."
+spacing="10": Spațiu de 10 pixeli între elementele din VBox.
+prefWidth / prefHeight: Dimensiunea preferată a ferestrei (400x500).
+4. Padding (Spațierea interioară)
+xml
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
+Pune o "margine interioară" de 10 pixeli în jurul întregului conținut, ca elementele să nu fie lipite de marginea ferestrei.
+5. Titlul (Label)
+xml
+    <Label fx:id="userLabel" text="Chat" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+fx:id="userLabel": Acesta este numele variabilei din Java! În
+ChatController.java
+ ai @FXML private Label userLabel;. JavaFX le conectează automat pe baza acestui ID.
+style="...": CSS inline. Setează fontul îngroșat și mărimea.
+6. Lista de mesaje (ListView)
+xml
+    <ListView fx:id="messageList" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;"/>
+fx:id="messageList": Legătura cu variabila messageList din Java.
+VBox.vgrow="ALWAYS": Îi spune părintelui (VBox) să lase această listă să crească și să ocupe tot spațiul liber disponibil pe verticală. Asta face ca lista să fie mare, iar input-ul să fie împins jos.
+7. Preview-ul pentru Reply
+xml
+    <Label fx:id="replyPreview" text="" style="-fx-text-fill: gray; -fx-font-style: italic;"/>
+Un text simplu, inițial gol, care va arăta "Replying to..." când selectezi un mesaj. Legat de variabila replyPreview din Java.
+8. Zona de Input (HBox)
+xml
+    <HBox spacing="10" alignment="CENTER_LEFT">
+Un HBox (Horizontal Box) care așază elementele unul lângă altul (TextField-ul și Butonul).
+xml
+        <TextField fx:id="messageInput" HBox.hgrow="ALWAYS" promptText="Type a message..."/>
+fx:id="messageInput": Legătura cu variabila din Java.
+HBox.hgrow="ALWAYS": Îi spune să se lățească cât de mult poate pe orizontală, împingând butonul în dreapta.
+promptText: Textul gri ("placeholder") care apare când căsuța e goală.
+xml
+        <Button text="Send" onAction="#handleSendMessage" style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
+onAction="#handleSendMessage": Aici e legătura cu funcția! Când apeși butonul, JavaFX caută metoda
+handleSendMessage()
+ în
+ChatController
+ și o execută. # indică faptul că este o metodă din controller.
+style: CSS pentru a face butonul albastru cu text alb.
+xml
+    </HBox>
+</VBox>
+Închide HBox-ul și VBox-ul principal.

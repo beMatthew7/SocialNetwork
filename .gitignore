@@ -1,0 +1,12 @@
+# IDE
+.idea/
+*.iml
+
+# Build
+build/
+out/
+.gradle/
+gradle/
+
+# Security
+db.properties

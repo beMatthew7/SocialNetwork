@@ -1,0 +1,150 @@
+public class ChatController implements Observer<Message> {
+    // Legături cu elementele din interfața grafică (FXML)
+    @FXML private ListView<Message> messageList; // Lista vizuală unde apar mesajele
+    @FXML private TextField messageInput;        // Căsuța unde scrii textul
+    @FXML private Label userLabel;               // Eticheta de sus: "Chat with X"
+    @FXML private Label replyPreview;            // Textul mic care apare când dai click pe un mesaj: "Replying to..."
+
+    // Datele necesare funcționării
+    private MessageService service;              // Service-ul care face legătura cu baza de date
+    private User currentUser;                    // Tu (cel logat)
+    private User otherUser;                      // Prietenul cu care vorbești
+    // Modelul de date pentru listă - orice modificare aici se vede automat în UI
+    private ObservableList<Message> model = FXCollections.observableArrayList();
+
+public void setService(MessageService service, User currentUser, User otherUser) {
+    this.service = service;
+    this.currentUser = currentUser;
+    this.otherUser = otherUser;
+
+    // TE ABONEZI la service. Când cineva trimite un mesaj, service-ul te va anunța.
+    service.addObserver(this);
+
+    // Setezi titlul ferestrei
+    userLabel.setText("Chat with " + otherUser.getUsername());
+
+    // Încarci mesajele existente din baza de date
+    initModel();
+
+    // Aici e logica pentru REPLY (Răspuns):
+    // Ascultăm ("listen") la lista de mesaje. Când selectezi (dai click) pe un rând:
+    messageList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+        if (newVal != null) {
+            // Dacă ai selectat ceva, afișăm textul "Replying to: ..."
+            replyPreview.setText("Replying to: " + newVal.getMessage());
+        } else {
+            // Dacă ai deselectat, ștergem textul
+            replyPreview.setText("");
+        }
+    });
+}
+
+
+
+private void initModel() {
+    // 1. Cerem conversația de la service
+    List<Message> messages = service.getConversation(currentUser, otherUser);
+
+    // 2. Punem mesajele în modelul observabil
+    model.setAll(messages);
+
+    // 3. Legăm modelul de lista vizuală. Acum lista știe CE date are, dar nu CUM să le afișeze.
+    messageList.setItems(model);
+
+    // 4. DEFINIM CUM ARATĂ FIECARE RÂND (CellFactory)
+    // Asta se execută pentru fiecare mesaj din listă.
+    messageList.setCellFactory(param -> new ListCell<>() {
+        @Override
+        protected void updateItem(Message item, boolean empty) {
+            super.updateItem(item, empty); // Apel obligatoriu la părinte
+
+            // Dacă rândul e gol sau nu are mesaj, nu afișăm nimic
+            if (empty || item == null) {
+                setGraphic(null);
+                setText(null);
+                setStyle("");
+            } else {
+                // --- Construim aspectul vizual ---
+
+                // HBox este containerul mare (rândul întreg). Îl folosim pentru aliniere (stânga/dreapta).
+                HBox container = new HBox();
+
+                // VBox este "bula" de chat. Conține mesajul și eventual reply-ul, unul sub altul.
+                VBox bubble = new VBox();
+                bubble.setStyle("-fx-padding: 10; -fx-background-radius: 10;"); // Rotunjim colțurile
+
+                // --- Logica de afișare REPLY ---
+                if (item.getReply() != null) {
+                    // Dacă mesajul este un răspuns, creăm un text mic gri deasupra
+                    Label replyLabel = new Label("Replying to: " + item.getReply().getMessage());
+                    replyLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: black; -fx-font-style: italic;");
+                    bubble.getChildren().add(replyLabel); // Îl punem în bulă
+                }
+
+                // --- Mesajul propriu-zis ---
+                Text text = new Text(item.getMessage());
+                text.setStyle("-fx-fill: white;"); // Text alb (default)
+                bubble.getChildren().add(text);    // Îl punem în bulă
+
+                // --- Logica de ALINIERE și CULOARE (Cine a trimis?) ---
+                if (item.getFrom().getID().equals(currentUser.getID())) {
+                    // EU am trimis mesajul:
+                    container.setAlignment(Pos.CENTER_RIGHT); // Aliniem la DREAPTA
+                    bubble.setStyle(bubble.getStyle() + "-fx-background-color: #0084ff;"); // Fundal ALBASTRU
+                    text.setStyle("-fx-fill: white;"); // Text ALB
+                } else {
+                    // EL a trimis mesajul:
+                    container.setAlignment(Pos.CENTER_LEFT); // Aliniem la STÂNGA
+                    bubble.setStyle(bubble.getStyle() + "-fx-background-color: #e4e6eb;"); // Fundal GRI
+                    text.setStyle("-fx-fill: black;"); // Text NEGRU (ca să se vadă pe gri)
+                }
+
+                // Punem bula în container
+                container.getChildren().add(bubble);
+
+                // Setăm containerul ca grafică a celulei
+                setGraphic(container);
+                setText(null); // Nu folosim textul standard al celulei, ci grafica noastră
+                setStyle("-fx-background-color: transparent;"); // Facem fundalul celulei transparent
+            }
+        }
+    });
+}
+
+@FXML
+public void handleSendMessage() {
+    String text = messageInput.getText();
+    if (text.isEmpty()) return; // Nu trimitem mesaje goale
+
+    // Verificăm dacă ai selectat un mesaj din listă (pentru Reply)
+    Message selected = messageList.getSelectionModel().getSelectedItem();
+
+    if (selected != null) {
+        // CAZUL REPLY: Apelezi metoda de reply din service
+        service.replyMessage(currentUser, selected, text);
+
+        // Deselectăm mesajul după ce am răspuns (ca următorul să fie normal, nu tot reply)
+        messageList.getSelectionModel().clearSelection();
+    } else {
+        // CAZUL NORMAL: Trimiți un mesaj simplu
+        service.sendMessage(currentUser, Collections.singletonList(otherUser), text);
+    }
+    // Golești căsuța de text
+    messageInput.clear();
+}
+
+@Override
+public void update(Message message) {
+    // Platform.runLater este CRUCIAL în JavaFX.
+    // Observer-ul poate fi notificat de pe un alt fir de execuție (thread).
+    // JavaFX nu te lasă să modifici interfața (UI) decât de pe thread-ul principal.
+    // runLater pune codul în "coada de așteptare" a thread-ului principal.
+    Platform.runLater(() -> {
+        // 1. Reîncarcă toată conversația (inclusiv mesajul nou)
+        List<Message> messages = service.getConversation(currentUser, otherUser);
+        model.setAll(messages);
+
+        // 2. Derulează (scroll) automat până jos, la ultimul mesaj
+        messageList.scrollTo(messages.size() - 1);
+    });
+}

@@ -1,0 +1,58 @@
+Deschiderea unei ferestre noi în JavaFX se face mereu urmând aceiași pași.
+
+1. Cum se deschide fereastra de CHAT?
+Locație: DuckController.java, metoda handleOpenChat() (linia 292).
+
+java
+// 1. Pregătești încărcătorul pentru fișierul FXML (design-ul)
+FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/example/gui/chat-view.fxml"));
+
+// 2. Creezi o scenă nouă din acel FXML
+// Scene = conținutul vizual efectiv
+Scene scene = new Scene(loader.load());
+
+// 3. Creezi o fereastră nouă (Stage)
+// Stage = rama ferestrei (cu butoane de X, minimize etc.)
+Stage chatStage = new Stage();
+chatStage.setScene(scene);
+
+// 4. Configurezi controller-ul ferestrei noi
+// (Îi dai datele de care are nevoie să funcționeze)
+ChatController chatController = loader.getController();
+chatController.setService(messageService, currentUser, selectedFriend);
+
+// 5. Afișezi fereastra
+chatStage.show();
+2. Cum se deschide o fereastră nouă de LOGIN?
+Locație: LoginController.java, metoda handleNewWindow() (linia 96).
+
+Aceasta este funcția din spatele butonului "New Window" de pe ecranul de login.
+
+java
+@FXML
+public void handleNewWindow() {
+    try {
+        // 1. Încarci ACELAȘI fișier FXML de login
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/example/gui/login-view.fxml"));
+
+        // 2. Creezi o fereastră (Stage) complet nouă
+        Stage newStage = new Stage();
+        newStage.setScene(new Scene(loader.load()));
+        newStage.setTitle("New Login Window");
+
+        // 3. Iei controller-ul noii ferestre
+        LoginController controller = loader.getController();
+
+        // 4. Îi dai ACELEAȘI servicii!
+        // Asta e cheia: ambele ferestre lucrează cu aceleași date (aceeași bază de date)
+        controller.setServices(userService, friendshipService, cardService, eventService, messageService, newStage);
+
+        // 5. O afișezi
+        newStage.show();
+    } catch (IOException e) {
+        // ...
+    }
+}
+Diferența esențială:
+La Chat, deschizi o fereastră secundară (chatStage.show()) și păstrezi fereastra principală deschisă.
+La Login (când intri în aplicație), de obicei înlocuiești conținutul ferestrei curente (stage.setScene(...)), nu deschizi una nouă. Dar butonul "New Window" demonstrează cum poți deschide mai multe instanțe ale aplicației simultan.
