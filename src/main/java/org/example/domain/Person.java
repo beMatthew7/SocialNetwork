@@ -21,9 +21,6 @@ public class Person extends User{
         this.empathyNivel = empathyNivel;
     }
 
-    protected void createDuckEvent(){
-        //TO DO
-    }
 
 
     public String getFirstName() {
