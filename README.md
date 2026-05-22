@@ -4,8 +4,6 @@ A desktop social network application built in Java, enabling interaction between
 
 The application combines classic social media features (friend requests, chat) with an algorithmic simulation of a duck race ("The Swimming Problem"), demonstrating the use of layered architecture and design patterns.
 
-## 📸 Screenshots
-*(Place a few screenshots of your app interface here - e.g., Login, Chat, Race Event)*
 
 ## ✨ Key Features
 
